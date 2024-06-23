@@ -683,6 +683,76 @@ StmtDiff BaseForwardModeVisitor::VisitConditionalOperator(
   return StmtDiff(condExpr, condExprDiff);
 }
 
+StmtDiff
+BaseForwardModeVisitor::VisitCXXForRangeStmt(const CXXForRangeStmt* FRS) {
+  beginScope(Scope::DeclScope | Scope::ControlScope | Scope::BreakScope |
+             Scope::ContinueScope);
+  // Visiting for range-based ststement produces __range1, __begin1 and __end1
+  // variables, so for(auto i: a){
+  //      ...
+  //}
+  //
+  // is equivalent to
+  //
+  // auto&& __range1 = a
+  // auto __begin1 = __range1;
+  // auto __end1 = __range1 + OUL
+  // for(;__begin != __end1; ++__begin){
+  //  auto i = *__begin1;
+  //        ...
+  //}
+  //
+  const VarDecl* Item = FRS->getLoopVariable();
+
+  const auto* RangeDecl = cast<VarDecl>(FRS->getRangeStmt()->getSingleDecl());
+  const auto* BeginDecl = cast<VarDecl>(FRS->getBeginStmt()->getSingleDecl());
+  const auto* EndDecl = cast<VarDecl>(FRS->getEndStmt()->getSingleDecl());
+
+  // Add range, begin and their's adjoints to the current block.
+  DeclDiff<VarDecl> RangeDeclDiff = DifferentiateVarDecl(RangeDecl);
+  addToCurrentBlock(BuildDeclStmt(RangeDeclDiff.getDecl_dx()));
+  addToCurrentBlock(BuildDeclStmt(RangeDeclDiff.getDecl()));
+
+  DeclDiff<VarDecl> BeginDeclDiff = DifferentiateVarDecl(BeginDecl);
+  addToCurrentBlock(BuildDeclStmt(BeginDeclDiff.getDecl_dx()));
+  addToCurrentBlock(BuildDeclStmt(BeginDeclDiff.getDecl()));
+
+  VarDecl* EndDeclDiff = DifferentiateVarDecl(EndDecl).getDecl();
+  addToCurrentBlock(BuildDeclStmt(EndDeclDiff));
+
+  // Build begin preincrementation.
+  DeclRefExpr* BeginExpr = BuildDeclRef(BeginDeclDiff.getDecl());
+  Expr* IncBegin = BuildOp(UO_PreInc, BeginExpr);
+
+  // Build begin preincrementation.
+  DeclRefExpr* d_BeginExpr = BuildDeclRef(BeginDeclDiff.getDecl_dx());
+  Expr* d_IncBegin = BuildOp(UO_PreInc, d_BeginExpr);
+
+  Expr* Inc = BuildOp(BO_Comma, d_IncBegin, IncBegin);
+
+  // Build begin != end expretion.
+  DeclRefExpr* EndExpr = BuildDeclRef(EndDeclDiff);
+  Expr* cond = BuildOp(BO_NE, BeginExpr, EndExpr);
+
+  DeclDiff<VarDecl> ItemDiff = DifferentiateVarDecl(Item);
+
+  // Differentiate body and add both Item and it's derivative.
+  const Stmt* body = FRS->getBody();
+  Stmt* bodyResult = nullptr;
+  bodyResult = Visit(body).getStmt();
+  Stmt* bodyWithItem1 = utils::PrependAndCreateCompoundStmt(
+      m_Sema.getASTContext(), bodyResult, BuildDeclStmt(ItemDiff.getDecl()));
+  bodyResult =
+      utils::PrependAndCreateCompoundStmt(m_Sema.getASTContext(), bodyWithItem1,
+                                          BuildDeclStmt(ItemDiff.getDecl_dx()));
+
+  Stmt* forStmtDiff =
+      new (m_Context) ForStmt(m_Context, nullptr, cond, /*condVar=*/nullptr,
+                              Inc, bodyResult, noLoc, noLoc, noLoc);
+
+  return StmtDiff(forStmtDiff);
+}
+
 StmtDiff BaseForwardModeVisitor::VisitForStmt(const ForStmt* FS) {
   beginScope(Scope::DeclScope | Scope::ControlScope | Scope::BreakScope |
              Scope::ContinueScope);
