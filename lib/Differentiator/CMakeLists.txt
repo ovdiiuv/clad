@@ -37,6 +37,7 @@ llvm_add_library(cladDifferentiator
   ReverseModeVisitor.cpp
   TBRAnalyzer.cpp
   StmtClone.cpp
+  UsefulAnalyzer.cpp
   VectorForwardModeVisitor.cpp
   VectorPushForwardModeVisitor.cpp
   Version.cpp
