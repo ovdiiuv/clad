@@ -414,9 +414,19 @@ namespace clad {
         opts.EnableVariedAnalysis = false; // Default mode.
     }
 
+    static void SetUsefulAnalysisOptions(const DifferentiationOptions& DO,
+                                         RequestOptions& opts) {
+      // If user has explicitly specified the mode for TBR analysis, use it.
+      if (DO.EnableUsefulAnalysis || DO.DisableUsefulAnalysis)
+        opts.EnableUsefulAnalysis =
+            DO.EnableUsefulAnalysis && !DO.DisableUsefulAnalysis;
+      else
+        opts.EnableUsefulAnalysis = false; // Default mode.
+    }
     void CladPlugin::SetRequestOptions(RequestOptions& opts) const {
       SetTBRAnalysisOptions(m_DO, opts);
       SetActivityAnalysisOptions(m_DO, opts);
+      SetUsefulAnalysisOptions(m_DO, opts);
     }
 
     void CladPlugin::FinalizeTranslationUnit() {

@@ -58,6 +58,12 @@ public:
             DisableTBRAnalysis(false), EnableVariedAnalysis(false),
             DisableActivityAnalysis(false), CustomEstimationModel(false),
             PrintNumDiffErrorInfo(false) {}
+      DifferentiationOptions()
+          : DumpSourceFn(false), DumpSourceFnAST(false), DumpDerivedFn(false),
+            DumpDerivedAST(false), GenerateSourceFile(false),
+            ValidateClangVersion(true), EnableTBRAnalysis(false),
+            EnableUsefulAnalysis(false), DisableTBRAnalysis(false),
+            CustomEstimationModel(false), PrintNumDiffErrorInfo(false) {}
 
       bool DumpSourceFn : 1;
       bool DumpSourceFnAST : 1;
@@ -69,6 +75,19 @@ public:
       bool DisableTBRAnalysis : 1;
       bool EnableVariedAnalysis : 1;
       bool DisableActivityAnalysis : 1;
+      bool CustomEstimationModel : 1;
+      bool PrintNumDiffErrorInfo : 1;
+      std::string CustomModelName;
+      bool DumpSourceFn : 1;
+      bool DumpSourceFnAST : 1;
+      bool DumpDerivedFn : 1;
+      bool DumpDerivedAST : 1;
+      bool GenerateSourceFile : 1;
+      bool ValidateClangVersion : 1;
+      bool EnableTBRAnalysis : 1;
+      bool DisableTBRAnalysis : 1;
+      bool EnableUsefulAnalysis : 1;
+      bool DisableUsefulAnalysis : 1;
       bool CustomEstimationModel : 1;
       bool PrintNumDiffErrorInfo : 1;
       std::string CustomModelName;
@@ -321,6 +340,10 @@ public:
             m_DO.EnableVariedAnalysis = true;
           } else if (args[i] == "-disable-va") {
             m_DO.DisableActivityAnalysis = true;
+          } else if (args[i] == "-enable-ua") {
+            m_DO.EnableUsefulAnalysis = true;
+          } else if (args[i] == "-disable-ua") {
+            m_DO.DisableUsefulAnalysis = true;
           } else if (args[i] == "-fcustom-estimation-model") {
             m_DO.CustomEstimationModel = true;
             if (++i == e) {
@@ -376,6 +399,11 @@ public:
         }
         if (m_DO.EnableVariedAnalysis && m_DO.DisableActivityAnalysis) {
           llvm::errs() << "clad: Error: -enable-va and -disable-va cannot "
+                          "be used together.\n";
+          return false;
+        }
+        if (m_DO.EnableUsefulAnalysis && m_DO.DisableUsefulAnalysis) {
+          llvm::errs() << "clad: Error: -enable-ua and -disable-ua cannot "
                           "be used together.\n";
           return false;
         }

@@ -2,6 +2,7 @@
 
 #include "ActivityAnalyzer.h"
 #include "TBRAnalyzer.h"
+#include "UsefulAnalyzer.h"
 
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -636,6 +637,25 @@ namespace clad {
     return found != m_ActivityRunInfo.ToBeRecorded.end();
   }
 
+  bool DiffRequest::shouldHaveAdjointForw(const VarDecl* VD) const {
+    if (!EnableUsefulAnalysis)
+      return true;
+
+    if (!m_UsefulRunInfo.HasAnalysisRun) {
+
+      UsefulAnalyzer analyzer(Function->getASTContext(),
+                              m_UsefulRunInfo.UsefulDecls,
+                              m_UsefulRunInfo.UsefulFuncs);
+      analyzer.Analyze(Function);
+      m_UsefulRunInfo.HasAnalysisRun = true;
+      llvm::errs() << "ToBeRecorded:  ";
+      for (auto* i : m_UsefulRunInfo.UsefulDecls)
+        llvm::errs() << i->getNameAsString() << "  ";
+    }
+    auto found = m_UsefulRunInfo.UsefulDecls.find(VD);
+    return found != m_UsefulRunInfo.UsefulDecls.end();
+  }
+
   bool DiffCollector::VisitCallExpr(CallExpr* E) {
     // Check if we should look into this.
     // FIXME: Generated code does not usually have valid source locations.
@@ -669,6 +689,8 @@ namespace clad {
       bool disable_tbr_in_req = false;
       bool enable_va_in_req = false;
       bool disable_va_in_req = false;
+      bool enable_ua_in_req = false;
+      bool disable_ua_in_req = false;
       if (!A->getAnnotation().equals("E") &&
           FD->getTemplateSpecializationArgs()) {
         const auto template_arg = FD->getTemplateSpecializationArgs()->get(0);
@@ -711,6 +733,10 @@ namespace clad {
         } else {
           request.EnableVariedAnalysis = m_Options.EnableVariedAnalysis;
         }
+        if (enable_ua_in_req || disable_ua_in_req)
+          request.EnableUsefulAnalysis = enable_ua_in_req && !disable_ua_in_req;
+        else
+          request.EnableUsefulAnalysis = m_Options.EnableUsefulAnalysis;
         if (clad::HasOption(bitmasked_opts_value, clad::opts::diagonal_only)) {
           if (!A->getAnnotation().equals("H")) {
             utils::EmitDiag(m_Sema, DiagnosticsEngine::Error, endLoc,
