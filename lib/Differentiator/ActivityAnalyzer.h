@@ -34,10 +34,13 @@ class VariedAnalyzer : public clang::RecursiveASTVisitor<VariedAnalyzer>,
 
   DiffRequest& m_DiffReq;
   std::set<const clang::Stmt*>& m_ResSet;
-
+  bool m_earlyTraverse = false;
+  std::unordered_map<unsigned int, bool> m_forceLoopPass;
+  bool m_isOrderInverted = false;
   void markExpr(const clang::Stmt* S) { m_ResSet.insert(S); }
   void setVaried(const clang::Expr* E, bool isVaried = true);
   void AnalyzeCFGBlock(const clang::CFGBlock& block);
+  void TraverseAllStmtInsideBlock(const clang::CFGBlock& block);
 
 public:
   /// Constructor

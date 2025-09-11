@@ -44,7 +44,8 @@ void VariedAnalyzer::Analyze() {
 
   // Add the entry block to the queue.
   m_CFGQueue.insert(m_CurBlockID);
-
+  // for(auto& i: *m_AnalysisDC->getCFG())
+  //   i->dump();
   // Visit CFG blocks in the queue until it's empty.
   while (!m_CFGQueue.empty()) {
     auto IDIter = std::prev(m_CFGQueue.end());
@@ -53,11 +54,20 @@ void VariedAnalyzer::Analyze() {
     CFGBlock& nextBlock = *getCFGBlockByID(m_AnalysisDC, m_CurBlockID);
     AnalyzeCFGBlock(nextBlock);
   }
+  // for(auto& i: m_DiffReq.getVariedDecls())
+  //   i->dump();
 }
-
-void VariedAnalyzer::AnalyzeCFGBlock(const CFGBlock& block) {
-  // Visit all the statements inside the block.
+void VariedAnalyzer::TraverseAllStmtInsideBlock(const CFGBlock& block) {
   for (const clang::CFGElement& Element : block) {
+
+    if (const Stmt* TS = block.getTerminatorStmt()) {
+      if (isa<CXXForRangeStmt>(TS)) {
+        if (m_forceLoopPass.find(block.getBlockID()) == m_forceLoopPass.end())
+          m_forceLoopPass[block.getBlockID()] = true;
+        m_isOrderInverted = true;
+      }
+    }
+
     if (Element.getKind() == clang::CFGElement::Statement) {
       const clang::Stmt* S = Element.castAs<clang::CFGStmt>().getStmt();
       // The const_cast is inevitable, since there is no
@@ -66,6 +76,30 @@ void VariedAnalyzer::AnalyzeCFGBlock(const CFGBlock& block) {
       TraverseStmt(const_cast<clang::Stmt*>(S));
     }
   }
+}
+void VariedAnalyzer::AnalyzeCFGBlock(const CFGBlock& block) {
+  // Visit all the statements inside the block.
+  // for (const clang::CFGElement& Element : block) {
+  //
+  //   if (const Stmt *TS = block.getTerminatorStmt()){
+  //     if(isa<CXXForRangeStmt>(TS)){
+  //       if(m_forceLoopPass.find(block.getBlockID()) == m_forceLoopPass.end())
+  //         m_forceLoopPass[block.getBlockID()] = true;
+  //       m_isOrderInverted = true;
+  //     }
+  //   }
+  //
+  //   if (Element.getKind() == clang::CFGElement::Statement) {
+  //     const clang::Stmt* S = Element.castAs<clang::CFGStmt>().getStmt();
+  //     // The const_cast is inevitable, since there is no
+  //     // ConstRecusiveASTVisitor.
+  //     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+  //     TraverseStmt(const_cast<clang::Stmt*>(S));
+  //   }
+  // }
+  //
+  if (!m_earlyTraverse)
+    TraverseAllStmtInsideBlock(block);
 
   for (const clang::CFGBlock::AdjacentBlock succ : block.succs()) {
     if (!succ)
@@ -79,10 +113,32 @@ void VariedAnalyzer::AnalyzeCFGBlock(const CFGBlock& block) {
       succData = std::make_unique<VarsData>();
       succData->m_Prev = m_BlockData[block.getBlockID()].get();
     }
+    if (m_isOrderInverted) {
+      if (succ->getBlockID() > block.getBlockID()) {
+        bool forceBlock = (m_forceLoopPass.find(block.getBlockID()) !=
+                           m_forceLoopPass.end()) &&
+                          m_forceLoopPass[block.getBlockID()];
 
-    if (succ->getBlockID() > block.getBlockID()) {
-      if (merge(succData.get(), m_BlockData[block.getBlockID()].get()))
+        if (forceBlock ||
+            merge(m_BlockData[block.getBlockID()].get(), succData.get())) {
+          m_forceLoopPass[block.getBlockID()] = false;
+          m_CFGQueue.insert(succ->getBlockID());
+        } else {
+          m_forceLoopPass.erase(block.getBlockID());
+          m_isOrderInverted = false;
+        }
+      } else {
         m_CFGQueue.insert(succ->getBlockID());
+        if (succData->m_Prev != m_BlockData[block.getBlockID()].get())
+          merge(m_BlockData[block.getBlockID()].get(), succData.get());
+      }
+    } else if (succ->getBlockID() > block.getBlockID()) {
+      TraverseAllStmtInsideBlock(*succ);
+      m_earlyTraverse = false;
+      if (merge(succData.get(), m_BlockData[block.getBlockID()].get())) {
+        m_earlyTraverse = true;
+        m_CFGQueue.insert(succ->getBlockID());
+      }
     } else {
       m_CFGQueue.insert(succ->getBlockID());
       if (succData->m_Prev != m_BlockData[block.getBlockID()].get())
@@ -197,7 +253,10 @@ bool VariedAnalyzer::TraverseDeclStmt(DeclStmt* DS) {
         m_Varied = false;
         m_Marking = false;
         TraverseStmt(init);
-
+        // if(VD->getNameAsString() == "__range1" && ir==-1){
+        //   // llvm::errs() << "\nAAA\n";
+        //   ir = 1;
+        // }
         auto* VDExpr = &getCurBlockVarsData()[VD];
         QualType VDType = VD->getType();
         // if the declared variable is ref type attach its VarData to the
@@ -241,8 +300,10 @@ bool VariedAnalyzer::TraverseUnaryOperator(UnaryOperator* UnOp) {
 }
 
 bool VariedAnalyzer::TraverseDeclRefExpr(DeclRefExpr* DRE) {
-  auto* VD = cast<VarDecl>(DRE->getDecl());
-
+  auto* VD = dyn_cast<VarDecl>(DRE->getDecl());
+  if (!VD)
+    return false;
+  // llvm::errs() << "\ndump\n";
   if (m_Varied && m_Marking) {
     setVaried(DRE);
     m_DiffReq.addVariedDecl(VD);
