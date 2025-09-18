@@ -66,6 +66,7 @@ public:
   bool TraverseUnaryOperator(clang::UnaryOperator* UnOp);
   bool TraverseCompoundAssignOperator(clang::CompoundAssignOperator* CAO);
   bool TraverseInitListExpr(clang::InitListExpr* ILE);
+  bool TraverseCXXOperatorCallExpr(clang::CXXOperatorCallExpr* CE);
 };
 } // namespace clad
 #endif // CLAD_DIFFERENTIATOR_ACTIVITYANALYZER_H

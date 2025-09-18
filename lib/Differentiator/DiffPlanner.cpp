@@ -1174,7 +1174,16 @@ static QualType GetDerivedFunctionType(const CallExpr* CE) {
       if (clad::utils::hasNonDifferentiableAttribute(E))
         return true;
 
+      request.CallContext = E;
+      request.EnableTBRAnalysis = m_TopMostReq->EnableTBRAnalysis;
+      request.EnableVariedAnalysis = m_TopMostReq->EnableVariedAnalysis;
+      request.EnableUsefulAnalysis = m_TopMostReq->EnableUsefulAnalysis;
+      request.VerboseDiags = false;
+
       if (const CXXMethodDecl* MD = dyn_cast<CXXMethodDecl>(FD)) {
+        if(isLambdaCallOperator(MD)){
+          request.EnableVariedAnalysis = false;
+        }
         const CXXRecordDecl* CD = MD->getParent();
         if (clad::utils::hasNonDifferentiableAttribute(CD))
           return true;
@@ -1226,12 +1235,6 @@ static QualType GetDerivedFunctionType(const CallExpr* CE) {
           (FDName == "cudaMemcpy" || utils::IsMemoryFunction(FD) ||
            FDName == "begin" || FDName == "end"))
         return true;
-
-      request.VerboseDiags = false;
-      request.EnableTBRAnalysis = m_TopMostReq->EnableTBRAnalysis;
-      request.EnableVariedAnalysis = m_TopMostReq->EnableVariedAnalysis;
-      request.EnableUsefulAnalysis = m_TopMostReq->EnableUsefulAnalysis;
-      request.CallContext = E;
 
       if (request.Mode != DiffMode::pushforward &&
           request.Mode != DiffMode::vector_pushforward) {
@@ -1299,7 +1302,7 @@ static QualType GetDerivedFunctionType(const CallExpr* CE) {
               /*AnalysisDeclContextManager=*/nullptr, request.Function,
               Options);
 
-      if (m_TopMostReq->EnableVariedAnalysis) {
+      if (request.EnableVariedAnalysis) {
         TimedAnalysisRegion R("VA " + request.BaseFunctionName);
         VariedAnalyzer analyzer(AnalysisDC.get(), request,
                                 request.getVariedStmt());

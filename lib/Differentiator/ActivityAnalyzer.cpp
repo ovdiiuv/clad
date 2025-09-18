@@ -20,6 +20,7 @@ using namespace clang;
 namespace clad {
 
 void VariedAnalyzer::Analyze() {
+  // m_DiffReq.Function->dump();
   m_BlockData.resize(m_AnalysisDC->getCFG()->size());
   // Set current block ID to the ID of entry the block.
 
@@ -54,6 +55,9 @@ void VariedAnalyzer::Analyze() {
     CFGBlock& nextBlock = *getCFGBlockByID(m_AnalysisDC, m_CurBlockID);
     AnalyzeCFGBlock(nextBlock);
   }
+  // for(auto& i: m_DiffReq.getVariedDecls())
+  //   i->dump();
+  // llvm::errs() << "\n=====\n";
 }
 
 void VariedAnalyzer::TraverseAllStmtInsideBlock(const CFGBlock& block) {
@@ -156,6 +160,11 @@ bool VariedAnalyzer::TraverseConditionalOperator(ConditionalOperator* CO) {
   return false;
 }
 
+bool VariedAnalyzer::TraverseCXXOperatorCallExpr(clang::CXXOperatorCallExpr* CE){
+  TraverseCallExpr(CE);
+  return false;
+}
+
 bool VariedAnalyzer::TraverseCallExpr(CallExpr* CE) {
   bool variedBefore = m_Varied;
   bool hasVariedArg = false;
@@ -191,9 +200,11 @@ bool VariedAnalyzer::TraverseCallExpr(CallExpr* CE) {
       m_Marking = false;
       m_Varied = false;
     }
+    m_Varied = hasVariedArg || variedBefore;
+  }else{
+    m_Varied = true;
   }
 
-  m_Varied = hasVariedArg || variedBefore;
   return false;
 }
 
