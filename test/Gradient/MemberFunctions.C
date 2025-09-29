@@ -10,7 +10,7 @@
 
 // RUN: %cladclang -std=c++17 %s -fno-exceptions -I%S/../../include -oMemberFunctions-cpp17.out 2>&1 | %filecheck %s
 // RUN: ./MemberFunctions-cpp17.out | %filecheck_exec %s
-// RUN: %cladclang -Xclang -plugin-arg-clad -Xclang -disable-tbr -std=c++17 %s -fno-exceptions -I%S/../../include -oMemberFunctions-cpp17.out
+// RUN: %cladclang -Xclang -plugin-arg-clad -Xclang -disable-tbr -Xclang -plugin-arg-clad -Xclang -enable-va -std=c++17 %s -fno-exceptions -I%S/../../include -oMemberFunctions-cpp17.out
 // RUN: ./MemberFunctions-cpp17.out | %filecheck_exec %s
 
 #include "clad/Differentiator/Differentiator.h"

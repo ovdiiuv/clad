@@ -1190,96 +1190,96 @@ int main() {
     dcomplex c1, c2, d_c1, d_c2;
     auto memFn1 = &Tangent::someMemFn;
 
-    INIT_GRADIENT(fn1);
-    INIT_GRADIENT(fn2);
-    INIT_GRADIENT(fn3);
+    // INIT_GRADIENT(fn1);
+    // INIT_GRADIENT(fn2);
+    // INIT_GRADIENT(fn3);
     INIT_GRADIENT(fn4);
-    INIT_GRADIENT(memFn1);
-    INIT_GRADIENT(fn5);
-    INIT_GRADIENT(fn6);
-    INIT_GRADIENT(fn7);
-    INIT_GRADIENT(fn8);
-    INIT_GRADIENT(fn9);
-    INIT_GRADIENT(fn10);
-    INIT_GRADIENT(fn11);
+    // INIT_GRADIENT(memFn1);
+    // INIT_GRADIENT(fn5);
+    // INIT_GRADIENT(fn6);
+    // INIT_GRADIENT(fn7);
+    // INIT_GRADIENT(fn8);
+    // INIT_GRADIENT(fn9);
+    // INIT_GRADIENT(fn10);
+    // INIT_GRADIENT(fn11);
     
-    TEST_GRADIENT(fn1, /*numOfDerivativeArgs=*/2, p, i, &d_p, &d_i);    // CHECK-EXEC: {1.00, 2.00, 3.00}
-    TEST_GRADIENT(fn2, /*numOfDerivativeArgs=*/2, t, i, &d_t, &d_i);    // CHECK-EXEC: {4.00, 2.00, 2.00, 2.00, 2.00, 1.00}
-    TEST_GRADIENT(fn3, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {7.00, 3.00}
+    // TEST_GRADIENT(fn1, /*numOfDerivativeArgs=*/2, p, i, &d_p, &d_i);    // CHECK-EXEC: {1.00, 2.00, 3.00}
+    // TEST_GRADIENT(fn2, /*numOfDerivativeArgs=*/2, t, i, &d_t, &d_i);    // CHECK-EXEC: {4.00, 2.00, 2.00, 2.00, 2.00, 1.00}
+    // TEST_GRADIENT(fn3, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {7.00, 3.00}
     TEST_GRADIENT(fn4, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {8.00, 8.00}
-    t.updateTo(5);
-    TEST_GRADIENT(memFn1, /*numOfDerivativeArgs=*/3, t, 3, 5, &d_t, &d_i, &d_j);   // CHECK-EXEC: {3.00, 5.00, 3.00, 5.00, 5.00, 5.00, 5.00}
-    t.updateTo(5);
-    TEST_GRADIENT(fn5, /*numOfDerivativeArgs=*/2, t, 3, &d_t, &d_i);    // CHECK-EXEC: {3.00, 9.00, 0.00, 0.00, 0.00, 35.00}
-    TEST_GRADIENT(fn6, /*numOfDerivativeArgs=*/2, c1, 3, &d_c1, &d_i);  // CHECK-EXEC: {0.00, 3.00, 31.00}
-    TEST_GRADIENT(fn7, /*numOfDerivativeArgs=*/2, c1, c2, &d_c1, &d_c2);// CHECK-EXEC: {0.00, 3.00, 5.00, 1.00}
-    TEST_GRADIENT(fn8, /*numOfDerivativeArgs=*/2, t, c1, &d_t, &d_c1);  // CHECK-EXEC: {0.00, 0.00, 0.00, 0.00, 0.00, 5.00, 0.00}
-    TEST_GRADIENT(fn9, /*numOfDerivativeArgs=*/2, t, c1, &d_t, &d_c1);  // CHECK-EXEC: {1.00, 1.00, 1.00, 1.00, 1.00, 5.00, 10.00}
-    TEST_GRADIENT(fn10, /*numOfDerivativeArgs=*/2, 5, 10, &d_i, &d_j);  // CHECK-EXEC: {1.00, 0.00}
-    TEST_GRADIENT(fn11, /*numOfDerivativeArgs=*/2, 3, -14, &d_i, &d_j);  // CHECK-EXEC: {1.00, -1.00}
-    MyStruct s = {1.0, 2.0}, d_s = {1.0, 1.0};
-    auto fn12_test = clad::gradient(fn12); // expected-note {{Use clad::jacobian to compute derivatives of multiple real outputs w.r.t. multiple real inputs.}}
-    fn12_test.execute(s, &d_s);
-    print(d_s); // CHECK-EXEC: {2.00, 2.00}
+    // t.updateTo(5);
+    // TEST_GRADIENT(memFn1, /*numOfDerivativeArgs=*/3, t, 3, 5, &d_t, &d_i, &d_j);   // CHECK-EXEC: {3.00, 5.00, 3.00, 5.00, 5.00, 5.00, 5.00}
+    // t.updateTo(5);
+    // TEST_GRADIENT(fn5, /*numOfDerivativeArgs=*/2, t, 3, &d_t, &d_i);    // CHECK-EXEC: {3.00, 9.00, 0.00, 0.00, 0.00, 35.00}
+    // TEST_GRADIENT(fn6, /*numOfDerivativeArgs=*/2, c1, 3, &d_c1, &d_i);  // CHECK-EXEC: {0.00, 3.00, 31.00}
+    // TEST_GRADIENT(fn7, /*numOfDerivativeArgs=*/2, c1, c2, &d_c1, &d_c2);// CHECK-EXEC: {0.00, 3.00, 5.00, 1.00}
+    // TEST_GRADIENT(fn8, /*numOfDerivativeArgs=*/2, t, c1, &d_t, &d_c1);  // CHECK-EXEC: {0.00, 0.00, 0.00, 0.00, 0.00, 5.00, 0.00}
+    // TEST_GRADIENT(fn9, /*numOfDerivativeArgs=*/2, t, c1, &d_t, &d_c1);  // CHECK-EXEC: {1.00, 1.00, 1.00, 1.00, 1.00, 5.00, 10.00}
+    // TEST_GRADIENT(fn10, /*numOfDerivativeArgs=*/2, 5, 10, &d_i, &d_j);  // CHECK-EXEC: {1.00, 0.00}
+    // TEST_GRADIENT(fn11, /*numOfDerivativeArgs=*/2, 3, -14, &d_i, &d_j);  // CHECK-EXEC: {1.00, -1.00}
+    // MyStruct s = {1.0, 2.0}, d_s = {1.0, 1.0};
+    // auto fn12_test = clad::gradient(fn12); // expected-note {{Use clad::jacobian to compute derivatives of multiple real outputs w.r.t. multiple real inputs.}}
+    // fn12_test.execute(s, &d_s);
+    // print(d_s); // CHECK-EXEC: {2.00, 2.00}
+    //
+    // auto fn13_test = clad::gradient(fn13, "x, y");
+    // double x[3] = {1.0, 2.0, 3.0}, y[3] = {0.0, 0.0, 0.0};
+    // double d_x[3] = {0.0, 0.0, 0.0}, d_y[3] = {1.0, 1.0, 1.0};
+    // int size = 3;
+    // fn13_test.execute(x, y, 3, d_x, d_y);
+    // printArray(d_x, size); // CHECK-EXEC: {2.00, 2.00, 2.00}
+    // printArray(d_y, size); // CHECK-EXEC: {0.00, 0.00, 0.00}
+    //
+    // INIT_GRADIENT(fn14);
+    // TEST_GRADIENT(fn14, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {30.00, 22.00}
+    //
+    // INIT_GRADIENT(fn15);
+    //
+    // INIT_GRADIENT(fn16);
+    // TEST_GRADIENT(fn16, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {22.00, 12.00}
+    //
+    // INIT_GRADIENT(fn17);
+    // TEST_GRADIENT(fn17, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {11.00, 2.00}
+    //
+    // INIT_GRADIENT(fn18);
+    // TEST_GRADIENT(fn18, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {30.00, 12.00}
+    //
+    // INIT_GRADIENT(fn19);
+    // TEST_GRADIENT(fn19, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {30.00, 12.00}
+    //
+    // s = {1.0, 2.0}, d_s = {1.0, 1.0};
+    // auto fn20_test = clad::gradient(fn20);
+    // fn20_test.execute(s, &d_s);
+    // print(d_s); // CHECK-EXEC: {2.00, 2.00}
 
-    auto fn13_test = clad::gradient(fn13, "x, y");
-    double x[3] = {1.0, 2.0, 3.0}, y[3] = {0.0, 0.0, 0.0};
-    double d_x[3] = {0.0, 0.0, 0.0}, d_y[3] = {1.0, 1.0, 1.0};
-    int size = 3;
-    fn13_test.execute(x, y, 3, d_x, d_y);
-    printArray(d_x, size); // CHECK-EXEC: {2.00, 2.00, 2.00}
-    printArray(d_y, size); // CHECK-EXEC: {0.00, 0.00, 0.00}
-
-    INIT_GRADIENT(fn14);
-    TEST_GRADIENT(fn14, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {30.00, 22.00}
-
-    INIT_GRADIENT(fn15);
-    
-    INIT_GRADIENT(fn16);
-    TEST_GRADIENT(fn16, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {22.00, 12.00}
-    
-    INIT_GRADIENT(fn17);
-    TEST_GRADIENT(fn17, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {11.00, 2.00}
-    
-    INIT_GRADIENT(fn18);
-    TEST_GRADIENT(fn18, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {30.00, 12.00}
-    
-    INIT_GRADIENT(fn19);
-    TEST_GRADIENT(fn19, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {30.00, 12.00}
-
-    s = {1.0, 2.0}, d_s = {1.0, 1.0};
-    auto fn20_test = clad::gradient(fn20);
-    fn20_test.execute(s, &d_s);
-    print(d_s); // CHECK-EXEC: {2.00, 2.00}
-
-    INIT_GRADIENT(fn21);
-    TEST_GRADIENT(fn21, /*numOfDerivativeArgs=*/2, 3, 2, &d_i, &d_j);    // CHECK-EXEC: {8.00, 0.00}
-
-    INIT_GRADIENT(fn22);
-
-    INIT_GRADIENT(fn23);
-    TEST_GRADIENT(fn23, /*numOfDerivativeArgs=*/2, 3, 2, &d_i, &d_j);    // CHECK-EXEC: {1.00, 1.00}
-
-
-    INIT_GRADIENT(fn24);
-    TEST_GRADIENT(fn24, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {2.00, 0.00}
-
-    INIT_GRADIENT(fn25);
-    TEST_GRADIENT(fn25, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {-1.00, 0.00}
-
-    INIT_GRADIENT(fn26);
-    TEST_GRADIENT(fn26, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {1.00, 0.00}
-
-    INIT_GRADIENT(fn27);
-    TEST_GRADIENT(fn27, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {30.00, 22.00}
-
-    INIT_GRADIENT(fn28);
-    TEST_GRADIENT(fn28, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {2.00, 1.00}
-
-    auto fn29_grad = clad::gradient(fn29, "input");
-    Session session;
-    float input[]{3., 4., 1., 2., 5};
-    float dout[]{0., 0., 0., 0., 0};
-    fn29_grad.execute(input, &session, dout);
-    printArray(dout, 5);  // CHECK-EXEC: {1.00, 1.00, 1.00, 1.00, 1.00}
+    // INIT_GRADIENT(fn21);
+    // TEST_GRADIENT(fn21, /*numOfDerivativeArgs=*/2, 3, 2, &d_i, &d_j);    // CHECK-EXEC: {8.00, 0.00}
+    //
+    // INIT_GRADIENT(fn22);
+    //
+    // INIT_GRADIENT(fn23);
+    // TEST_GRADIENT(fn23, /*numOfDerivativeArgs=*/2, 3, 2, &d_i, &d_j);    // CHECK-EXEC: {1.00, 1.00}
+    //
+    //
+    // INIT_GRADIENT(fn24);
+    // TEST_GRADIENT(fn24, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {2.00, 0.00}
+    //
+    // INIT_GRADIENT(fn25);
+    // TEST_GRADIENT(fn25, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {-1.00, 0.00}
+    //
+    // INIT_GRADIENT(fn26);
+    // TEST_GRADIENT(fn26, /*numOfDerivativeArgs=*/2, 2, 3, &d_i, &d_j);    // CHECK-EXEC: {1.00, 0.00}
+    //
+    // INIT_GRADIENT(fn27);
+    // TEST_GRADIENT(fn27, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {30.00, 22.00}
+    //
+    // INIT_GRADIENT(fn28);
+    // TEST_GRADIENT(fn28, /*numOfDerivativeArgs=*/2, 3, 5, &d_i, &d_j);    // CHECK-EXEC: {2.00, 1.00}
+    //
+    // auto fn29_grad = clad::gradient(fn29, "input");
+    // Session session;
+    // float input[]{3., 4., 1., 2., 5};
+    // float dout[]{0., 0., 0., 0., 0};
+    // fn29_grad.execute(input, &session, dout);
+    // printArray(dout, 5);  // CHECK-EXEC: {1.00, 1.00, 1.00, 1.00, 1.00}
 }

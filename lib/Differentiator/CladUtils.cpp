@@ -826,6 +826,13 @@ namespace clad {
              !QT.getNonReferenceType().isConstQualified();
     }
 
+   // bool isCastUtil(const clang::FunctionDecl* FD){
+    //   std::string FDName = FD->getNameAsString();
+    //   if(FDName == "forward" || FDName == "move")
+    //     return true;
+    //   return false;
+    // }
+
     bool isCopyable(const clang::CXXRecordDecl* RD) {
       if (RD->defaultedCopyConstructorIsDeleted())
         return false;

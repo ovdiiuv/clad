@@ -20,14 +20,23 @@ using namespace clang;
 namespace clad {
 
 void VariedAnalyzer::Analyze() {
-  // m_DiffReq.Function->dump();
+  m_DiffReq.Function->dump();
   m_BlockData.resize(m_AnalysisDC->getCFG()->size());
+
   // Set current block ID to the ID of entry the block.
 
   CFGBlock& entry = m_AnalysisDC->getCFG()->getEntry();
   m_CurBlockID = entry.getBlockID();
 
   m_BlockData[m_CurBlockID] = std::make_unique<VarsData>();
+  
+  const auto* MD = dyn_cast<CXXMethodDecl>(m_DiffReq.Function);
+  if (MD && !MD->isStatic()) {
+    VarData& thisData = getCurBlockVarsData()[nullptr];
+    thisData = VarData(MD->getThisType(), /*forceInit=*/true);
+    if (!isa<CXXConstructorDecl>(m_DiffReq.Function))
+      setIsRequired(&thisData);
+  }
 
   for (const auto* i : m_DiffReq.getVariedDecls()) {
     addVar(i, /*forceInit=*/true);
@@ -44,7 +53,6 @@ void VariedAnalyzer::Analyze() {
       setIsRequired(getVarDataFromDecl(par), /*isReq=*/false);
     }
   }
-
   // Add the entry block to the queue.
   m_CFGQueue.insert(m_CurBlockID);
   // Visit CFG blocks in the queue until it's empty.
@@ -55,9 +63,10 @@ void VariedAnalyzer::Analyze() {
     CFGBlock& nextBlock = *getCFGBlockByID(m_AnalysisDC, m_CurBlockID);
     AnalyzeCFGBlock(nextBlock);
   }
-  // for(auto& i: m_DiffReq.getVariedDecls())
-  //   i->dump();
-  // llvm::errs() << "\n=====\n";
+  llvm::errs() << "\nbb\n";
+  for(auto& i: m_DiffReq.getVariedDecls())
+    i->dump();
+  llvm::errs() << "\n=====end\n";
 }
 
 void VariedAnalyzer::TraverseAllStmtInsideBlock(const CFGBlock& block) {
@@ -165,6 +174,71 @@ bool VariedAnalyzer::TraverseCXXOperatorCallExpr(clang::CXXOperatorCallExpr* CE)
   return false;
 }
 
+
+bool VariedAnalyzer::TraverseCXXConstructExpr(clang::CXXConstructExpr* CE){
+// CE->dump(); 
+    unsigned numArgs = CE->getNumArgs();
+auto l = CE->getConstructor();
+auto k = l->parameters();
+    // Iterate through arguments using a loop
+    for (unsigned i = 0; i < numArgs; ++i) {
+        clang::Expr* argExpr = CE->getArg(i);
+        // m_Marking = true;
+        m_Varied = true;
+        TraverseStmt(argExpr);
+        markExpr(argExpr);
+       if (auto *jj = dyn_cast_or_null<DeclRefExpr>(argExpr)) {
+          if (auto *j = dyn_cast<VarDecl>(jj->getDecl())) {
+            llvm::errs() << "\nbim\n";
+              m_DiffReq.addVariedDecl(k[i]);
+          }
+        }
+    }
+
+  return false;
+}
+
+bool VariedAnalyzer::TraverseCXXThisExpr(clang::CXXThisExpr* TE) {
+  setVaried(TE);
+  return false;
+}
+
+bool VariedAnalyzer::TraverseCXXMemberCallExpr(clang::CXXMemberCallExpr* CE) {
+  // CE->dump();
+  TraverseStmt(CE->getImplicitObjectArgument());
+  // CE->getMethodDecl()->dump();
+
+  // Here we have to traverse the arguments and if nothing is varied, remove adjoint of 'this'.
+  // Due to how member functions are habdeled in RMV::VCE, we keep it varied regardless.
+  //
+  m_Marking = true;
+  for (Expr* arg : CE->arguments())
+    TraverseStmt(arg);
+
+  m_Marking = false;
+  if (auto *jj = dyn_cast_or_null<DeclRefExpr>(CE->getImplicitObjectArgument())) {
+    if (auto *j = dyn_cast<VarDecl>(jj->getDecl())) {
+      // llvm::errs() << "\nbim\n";
+      // j->dump();
+        m_DiffReq.addVariedDecl(j);
+    }
+  }
+
+  return false;
+}
+
+bool VariedAnalyzer::TraverseMemberExpr(clang::MemberExpr* ME){
+  // ME->getBase()->dump();
+  // if(ME->getBase())
+  TraverseStmt(ME->getBase());
+// ME->getMemberDecl()->dump();
+  if(m_Varied)
+    setVaried(ME);
+
+
+  return false;
+}
+
 bool VariedAnalyzer::TraverseCallExpr(CallExpr* CE) {
   bool variedBefore = m_Varied;
   bool hasVariedArg = false;
@@ -216,7 +290,7 @@ bool VariedAnalyzer::TraverseDeclStmt(DeclStmt* DS) {
         m_Varied = false;
         m_Marking = false;
         TraverseStmt(init);
-
+// init->dump();
         if (m_Varied) {
           m_DiffReq.addVariedDecl(VD);
           setIsRequired(getVarDataFromDecl(VD));
@@ -231,10 +305,6 @@ bool VariedAnalyzer::TraverseDeclStmt(DeclStmt* DS) {
         if (VDExpr->m_Type == VarData::REF_TYPE || VDType->isPointerType()) {
           init = init->IgnoreParenCasts();
           if (VDType->isPointerType()) {
-            // if (isa<CXXNewExpr>(init)) {
-            //   VDExpr->initializeAsArray(VDType);
-            //   return false;
-            // }
             VDExpr->m_Type = VarData::REF_TYPE;
           }
           new (&VDExpr->m_Val.m_RefData)
@@ -261,8 +331,8 @@ bool VariedAnalyzer::TraverseUnaryOperator(UnaryOperator* UnOp) {
 }
 
 bool VariedAnalyzer::TraverseDeclRefExpr(DeclRefExpr* DRE) {
-  auto* VD = cast<VarDecl>(DRE->getDecl());
-
+  auto* VD = dyn_cast<VarDecl>(DRE->getDecl());
+// if(!VD)
   if (m_Varied && m_Marking) {
     setVaried(DRE);
     m_DiffReq.addVariedDecl(VD);

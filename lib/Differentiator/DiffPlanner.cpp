@@ -1093,8 +1093,10 @@ static QualType GetDerivedFunctionType(const CallExpr* CE) {
     // because of our STL and Kokkos custom derivatives.
     bool enableDiagnostics = !isa<CXXMethodDecl>(request.Function) &&
                              !request->isOverloadedOperator();
+    llvm::errs()  << "\n==========1S\n";
     Expr* overload = getOverloadExpr(m_Sema, Name, DC, DerivativeType, callSite,
                                      enableDiagnostics);
+    llvm::errs()  << "\n==========ENDDD\n";
     if (!overload && request.Mode == DiffMode::vector_pushforward) {
       Name = request.BaseFunctionName + "_pushforward";
       overload = getOverloadExpr(m_Sema, Name, DC, DerivativeType, callSite,
@@ -1302,7 +1304,7 @@ static QualType GetDerivedFunctionType(const CallExpr* CE) {
               /*AnalysisDeclContextManager=*/nullptr, request.Function,
               Options);
 
-      if (request.EnableVariedAnalysis) {
+      if (request.EnableVariedAnalysis && request->isDefined()) {
         TimedAnalysisRegion R("VA " + request.BaseFunctionName);
         VariedAnalyzer analyzer(AnalysisDC.get(), request,
                                 request.getVariedStmt());

@@ -245,6 +245,7 @@ Expr* ReverseModeVisitor::getStdInitListSizeExpr(const Expr* E) {
   }
 
   DerivativeAndOverload ReverseModeVisitor::Derive() {
+    llvm::errs() << "\nRMV::DERVIn";
     assert(m_DiffReq.Function && "Must not be null.");
 
     PrettyStackTraceDerivative CrashInfo(m_DiffReq, m_Blocks, m_Sema,
@@ -1426,6 +1427,7 @@ Expr* ReverseModeVisitor::getStdInitListSizeExpr(const Expr* E) {
   }
 
   StmtDiff ReverseModeVisitor::VisitDeclRefExpr(const DeclRefExpr* DRE) {
+    // llvm::errs() << "\nDDDDDDDD\n";
     Expr* clonedDRE = Clone(DRE);
     // Check if referenced Decl was "replaced" with another identifier inside
     // the derivative
@@ -1699,6 +1701,7 @@ Expr* ReverseModeVisitor::getStdInitListSizeExpr(const Expr* E) {
   }
 
   StmtDiff ReverseModeVisitor::VisitCallExpr(const CallExpr* CE) {
+    llvm::errs() << "\nWE ARE NOT ENTERING\n";
     const FunctionDecl* FD = CE->getDirectCallee();
     if (!FD) {
       diag(DiagnosticsEngine::Warning,
